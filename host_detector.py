@@ -35,7 +35,7 @@ def split_data(inputfile_shuf, ip_type):
     return datafile
 
 def live_host_check(ipfile, ip_type):
-    print('Starting Nmap process ...')
+    print('Starting Nmap subprocess ...')
 
     if ip_type == 'ipv4':
         os.system("nmap -iL inputlist.txt -T5 -n -sn --min-parallelism=100 --max-parallelism=256 -oG - | awk '/Up$/{print $2}' > live_hosts.txt")
@@ -57,7 +57,7 @@ def live_host_check(ipfile, ip_type):
 
 
 def shuffle_data(inputfile):
-    print('Shuffle IP addresses ...')
+    print('Randomzing IP address order...')
     fid = open(inputfile, "r")
     li = fid.readlines()
     fid.close()
