@@ -103,22 +103,3 @@ def main(arguments):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
-
-
-
-
-'''
-with open(inputfile, 'r') as csvfile:
-    if ip_type == 'ipv4':
-        fp = csv.reader(csvfile, delimiter=':')
-    else:
-        fp = csv.reader(csvfile, delimiter='.', quotechar='|')
-
-    for row in fp:
-        #program = 'nmap'
-        #parameters = row[0] + ' -6 -p ' + row[1]
-        #parameters = row[0] + ' -sV -T5 -script=banner -p ' + row[1]
-        print('Scanning: ' + row[0] + ' on port ' + row[1])
-        result = subprocess.Popen(["nmap", row[0], '--script=banner','-T5', '-p', row[1]], stdout=subprocess.PIPE)
-        print(result.communicate())
-'''
