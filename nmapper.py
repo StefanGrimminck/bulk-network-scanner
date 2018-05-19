@@ -4,6 +4,7 @@ import os
 import csv
 import random
 
+
 def check_ext(choices):
     """
              choises:    input type: [.IPv4 or .IPv6]
@@ -26,6 +27,7 @@ def check_ext(choices):
 
     return Act
 
+
 def split_data(inputfile_shuf, ip_type):
     """
              ipfile_shuf:     Lists with ip's to split
@@ -47,12 +49,13 @@ def split_data(inputfile_shuf, ip_type):
             fp = csv.reader(csvfile, delimiter='.')
 
         for row in fp:
-            with open(datafile, "a") as myfile:
-                myfile.write(row[0] + '\n')
+            with open(datafile, "a") as f:
+                f.write(row[0] + '\n')
 
     os.remove(inputfile_shuf)
 
     return datafile
+
 
 def live_host_check(ipfile, ip_type):
     """
@@ -71,7 +74,6 @@ def live_host_check(ipfile, ip_type):
     if ip_type == 'ipv4':
         os.system("nmap -iL inputlist.txt -T5 -n -sn --min-parallelism=100 --max-parallelism=256 -oG - | awk '/Up$/{print $2}' > live_hosts.txt")
     else:
-        #Needs to be tested for IPv6 output format
         os.system("nmap -iL inputlist.txt -6 -T5 -n -sn --min-parallelism=100 --max-parallelism=256 -oG - | awk '/Up$/{print $2}' > live_hosts.txt")
 
     print('Live Host scan done ...')
@@ -84,7 +86,6 @@ def live_host_check(ipfile, ip_type):
     os.remove('live_hosts.txt')
 
     return hostlist
-
 
 
 def general_service_discovery(live_hosts, outfile, ip_type):
@@ -118,8 +119,6 @@ def general_service_discovery(live_hosts, outfile, ip_type):
     return outfile
 
 
-
-
 def shuffle_data(inputfile):
     """
         inputfile:  The original input file given as a parameter when starting the script
@@ -141,6 +140,7 @@ def shuffle_data(inputfile):
     fid.writelines(li)
     fid.close()
     return inputfile + '_shuffled'
+
 
 def combine_ip_port(inputfile, hosts, ip_type):
     """
@@ -169,7 +169,6 @@ def combine_ip_port(inputfile, hosts, ip_type):
     return hosts_and_ports
 
 
-
 def main(arguments):
 
     """
@@ -188,28 +187,14 @@ def main(arguments):
     outfile = args.outfile
     ip_type = args.ip_type
 
-    shuf_file  = shuffle_data(infile)
-    datafile   = split_data(shuf_file, ip_type)
+    shuf_file = shuffle_data(infile)
+    datafile = split_data(shuf_file, ip_type)
     live_hosts = live_host_check(datafile, ip_type)
 
     # This is only needed for targeted scan, which at this point is not implemented yet.
     #ip_port_list = combine_ip_port(infile, live_hosts, ip_type)
 
     general_service_discovery(live_hosts, outfile, ip_type)
-
-
-    # Check if service is actually running
-
-    # Check what service is running
-
-
-    # TEMPORARY OUTPUT FOR DEBUGGING #
-
-#    fp = open(outfile.name, "w")
-#    for host in live_hosts:
-#        fp.write(host + '\n')
-#    fp.close()
-
 
 
 if __name__ == "__main__":
