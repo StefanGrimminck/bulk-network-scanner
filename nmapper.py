@@ -5,6 +5,16 @@ import csv
 import random
 
 def check_ext(choices):
+    """
+             choises:    input type: [.IPv4 or .IPv6]
+
+             Function:
+             Checks if the file extension is ipv4 or ipv6
+
+             Return value:
+             Instance of Act Class
+    """
+
     class Act(argparse.Action):
         def __call__(self, parser, namespace, fname, option_string=None):
             ext = os.path.splitext(fname)[1][1:]
@@ -17,6 +27,16 @@ def check_ext(choices):
     return Act
 
 def split_data(inputfile_shuf, ip_type):
+    """
+             ipfile_shuf:     Lists with ip's to split
+             ip_type:    Type of IP address used.
+
+             Function:
+             Removes the port from the records provided by the inputfile
+
+             Return value:
+             List with ip addresses
+    """
 
     datafile = "inputlist.txt"
 
@@ -35,6 +55,17 @@ def split_data(inputfile_shuf, ip_type):
     return datafile
 
 def live_host_check(ipfile, ip_type):
+    """
+          ipfile:     Lists with ip's to scan
+          ip_type:    Type of IP address used.
+
+          Function:
+          Attempts to find online hosts behind the IP addresses provided as a csv file given as a parameter
+          when starting the script.
+
+          Return value:
+          List with online hosts
+    """
     print('Starting Nmap process ...')
 
     if ip_type == 'ipv4':
@@ -46,17 +77,29 @@ def live_host_check(ipfile, ip_type):
     print('Live Host scan done ...')
 
     with open("live_hosts.txt") as f:
-        content = f.readlines()
-    content = [x.strip() for x in content]
+        hostlist = f.readlines()
+    hostlist = [x.strip() for x in hostlist]
 
     os.remove(ipfile)
     os.remove('live_hosts.txt')
 
-    return content
+    return hostlist
 
 
 
 def general_service_discovery(live_hosts, outfile, ip_type):
+    """
+        live_hosts: Live hosts found with the host discovery
+        outfile:    The original input file given as a parameter when starting the script
+        ip_type:    Type of IP address used.
+
+        Function:
+        Attempts to find services on hosts and save it in XML format to outfile
+
+        Return value:
+        Outfile object
+        """
+
     print('Starting Service Discovery process ...')
 
     fp = open("host_for_general_scan.txt", "w")
@@ -78,6 +121,15 @@ def general_service_discovery(live_hosts, outfile, ip_type):
 
 
 def shuffle_data(inputfile):
+    """
+        inputfile:  The original input file given as a parameter when starting the script
+\
+        Function:
+        Shuffles rows around to prevent the scanning of a whole institution at once
+
+        Return value:
+        Name of file where ip records are shuffled
+        """
     print('Shuffle IP addresses ...')
     fid = open(inputfile, "r")
     li = fid.readlines()
@@ -91,6 +143,18 @@ def shuffle_data(inputfile):
     return inputfile + '_shuffled'
 
 def combine_ip_port(inputfile, hosts, ip_type):
+    """
+    inputfile:  The original input file given as a parameter when starting the script
+    hosts:      Live hosts found with the host discovery
+    ip_type:    Type of IP address used.
+
+    Function:
+    Will combine the live hosts with the input file to create a list where live hosts are combined
+    with the "live" service ports.
+
+    Return value:
+    list of live hosts with ports
+    """
 
     hosts_and_ports = []
     with open(inputfile, "r") as file:
