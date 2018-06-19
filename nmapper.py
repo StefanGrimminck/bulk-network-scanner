@@ -33,13 +33,15 @@ def check_ext(choices):
     return Act
 
 
-def split_data(inputfile_shuf, ip_type):
+def split_data(inputfile_shuf, ip_type, blacklist):
     """
              ipfile_shuf:     Lists with ip's to split
              ip_type:    Type of IP address used.
+             blacklist: File with IP addresses that should not be scanned
 
              Function:
              Removes the port from the records provided by the inputfile
+             Removes blacklisted IP's from queue
 
              Return value:
              List with ip addresses
@@ -49,13 +51,17 @@ def split_data(inputfile_shuf, ip_type):
 
     with open(inputfile_shuf, 'r') as csvfile:
         if ip_type == 'ipv4':
-            file = csv.reader(csvfile, delimiter=':')
+            input_file = csv.reader(csvfile, delimiter=':')
         else:
-            file = csv.reader(csvfile, delimiter='.')
+            input_file = csv.reader(csvfile, delimiter='.')
 
-        for row in file:
-            with open(datafile, "a") as file:
-                file.write(row[0] + '\n')
+        file_pointer = open(blacklist, "r")
+        blacklist = file_pointer.readlines()
+
+        with open(datafile, "a") as file:
+            for row in input_file:
+                if row[0] not in blacklist:
+                    file.write(row[0] + '\n')
 
     os.remove(inputfile_shuf)
 
@@ -119,13 +125,12 @@ def general_service_discovery(live_hosts, outfile, ip_type):
     file.close()
 
     if ip_type == 'ipv4':
-        os.system("nmap -iL host_for_general_scan.txt -T5 -sV --min-hostgroup=1024 "
-                  "--min-parallelism=200 --initial-rtt-timeout=200ms "
-                  "--max-rtt-timeout=300 --max-retries=3 --host-timeout=3m -oX " + outfile.name)
+        os.system("nmap --script=banner -iL host_for_general_scan.txt -T5 -sV --min-parallelism=100 "
+                  "--initial-rtt-timeout=200ms --max-rtt-timeout=300ms --max-retries=3 "
+                  "--host-timeout=3m -oX " + outfile.name)
     else:
-        os.system("nmap -iL host_for_general_scan.txt -6 -T5 -sV --min-hostgroup=1024 "
-                  "--min-parallelism=200  --initial-rtt-timeout=200ms "
-                  "--max-rtt-timeout=300 --max-retries=3 --host-timeout=3m -oX " + outfile.name)
+        os.system("nmap --script=banner -iL host_for_general_scan.txt -6 -T5 -sV "
+                  " --host-timeout=3m -oX  " + outfile.name)
 
     print('Service scan done ...')
     os.remove("host_for_general_scan.txt")
@@ -133,10 +138,10 @@ def general_service_discovery(live_hosts, outfile, ip_type):
     return outfile
 
 
-def shuffle_data(inputfile):
+def parse_input_file(inputfile):
     """
         inputfile:  The original input file given as a parameter when starting the script
-\
+
         Function:
         Shuffles rows around to prevent the scanning of a whole institution at once
 
@@ -195,6 +200,7 @@ def main(arguments):
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('infile', help='Input file', action=check_ext({'ipv4', 'ipv6'}))
     parser.add_argument("outfile", help="Output file", type=argparse.FileType("w"))
+    parser.add_argument('blacklist_file', help='Blacklist file',)
     parser.add_argument("ip_type", choices=['ipv4', 'ipv6'])
 
 # Convert args to usable variables
@@ -202,9 +208,10 @@ def main(arguments):
     infile = args.infile
     outfile = args.outfile
     ip_type = args.ip_type
+    blacklist_file = args.blacklist_file
 
-    shuf_file = shuffle_data(infile)
-    datafile = split_data(shuf_file, ip_type)
+    shuf_file = parse_input_file(infile)
+    datafile = split_data(shuf_file, ip_type, blacklist_file)
     live_hosts = live_host_check(datafile, ip_type)
 
     # This is only needed for targeted scan, which at this point is not implemented yet.
