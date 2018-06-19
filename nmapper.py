@@ -120,11 +120,11 @@ def general_service_discovery(live_hosts, outfile, ip_type):
 
     if ip_type == 'ipv4':
         os.system("nmap -iL host_for_general_scan.txt -T5 -sV --min-hostgroup=1024 "
-                  "--min-parallelism=200 --initial-rtt-timeout=200 "
+                  "--min-parallelism=200 --initial-rtt-timeout=200ms "
                   "--max-rtt-timeout=300 --max-retries=3 --host-timeout=3m -oX " + outfile.name)
     else:
         os.system("nmap -iL host_for_general_scan.txt -6 -T5 -sV --min-hostgroup=1024 "
-                  "--min-parallelism=200  --initial-rtt-timeout=200 "
+                  "--min-parallelism=200  --initial-rtt-timeout=200ms "
                   "--max-rtt-timeout=300 --max-retries=3 --host-timeout=3m -oX " + outfile.name)
 
     print('Service scan done ...')
