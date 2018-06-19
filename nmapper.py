@@ -1,3 +1,6 @@
+""" Modules for parsing input, using system functions,
+    running commandline scripts, parsing csv files, and randomizing lists
+"""
 import argparse
 import sys
 import os
@@ -16,12 +19,14 @@ def check_ext(choices):
              Instance of Act Class
     """
 
+    """ Class for checking file extension"""
     class Act(argparse.Action):
         def __call__(self, parser, namespace, fname, option_string=None):
             ext = os.path.splitext(fname)[1][1:]
             if ext not in choices:
                 option_string = '({})'.format(option_string) if option_string else ''
-                parser.error("inputfile doesn't end with one of {}{}".format(choices, option_string))
+                parser.error("inputfile doesn't end with one of {}{}"
+                             .format(choices, option_string))
             else:
                 setattr(namespace, self.dest, fname)
 
@@ -44,13 +49,13 @@ def split_data(inputfile_shuf, ip_type):
 
     with open(inputfile_shuf, 'r') as csvfile:
         if ip_type == 'ipv4':
-            fp = csv.reader(csvfile, delimiter=':')
+            file = csv.reader(csvfile, delimiter=':')
         else:
-            fp = csv.reader(csvfile, delimiter='.')
+            file = csv.reader(csvfile, delimiter='.')
 
-        for row in fp:
-            with open(datafile, "a") as f:
-                f.write(row[0] + '\n')
+        for row in file:
+            with open(datafile, "a") as file:
+                file.write(row[0] + '\n')
 
     os.remove(inputfile_shuf)
 
@@ -63,7 +68,8 @@ def live_host_check(ipfile, ip_type):
           ip_type:    Type of IP address used.
 
           Function:
-          Attempts to find online hosts behind the IP addresses provided as a csv file given as a parameter
+          Attempts to find online hosts behind the IP addresses
+          provided as a csv file given as a parameter
           when starting the script.
 
           Return value:
@@ -72,20 +78,24 @@ def live_host_check(ipfile, ip_type):
     print('Starting Nmap process ...')
 
     if ip_type == 'ipv4':
-        os.system("nmap -iL inputlist.txt -T5 -n -sn --min-parallelism=100 --max-parallelism=256 -oG - | awk '/Up$/{print $2}' > live_hosts.txt")
+        os.system("nmap -iL inputlist.txt -T5 -n -sn --min-parallelism=100 "
+                  "--max-parallelism=256 -oG - | awk '/Up$/{print $2}' > live_hosts.txt")
     else:
-        os.system("nmap -iL inputlist.txt -6 -T5 -n -sn --min-parallelism=100 --max-parallelism=256 -oG - | awk '/Up$/{print $2}' > live_hosts.txt")
+        os.system("nmap -iL inputlist.txt -6 -T5 -n -sn --min-parallelism=100 "
+                  "--max-parallelism=256 -oG - | awk '/Up$/{print $2}' > live_hosts.txt")
 
     print('Live Host scan done ...')
 
-    with open("live_hosts.txt") as f:
-        hostlist = f.readlines()
-    hostlist = [x.strip() for x in hostlist]
+    with open("live_hosts.txt") as file:
+        host_list = file.readlines()
+    host_list = [x.strip() for x in host_list]
 
     os.remove(ipfile)
     os.remove('live_hosts.txt')
 
-    return hostlist
+    print("Amount of live hosts found: " + str(len(host_list)))
+
+    return host_list
 
 
 def general_service_discovery(live_hosts, outfile, ip_type):
@@ -103,15 +113,19 @@ def general_service_discovery(live_hosts, outfile, ip_type):
 
     print('Starting Service Discovery process ...')
 
-    fp = open("host_for_general_scan.txt", "w")
+    file = open("host_for_general_scan.txt", "w")
     for host in live_hosts:
-        fp.write(host + '\n')
-    fp.close()
+        file.write(host + '\n')
+    file.close()
 
     if ip_type == 'ipv4':
-        os.system("nmap -iL host_for_general_scan.txt -T5 -sV --min-parallelism=100 --max-parallelism=256 -oX " + outfile.name)
+        os.system("nmap -iL host_for_general_scan.txt -T5 -sV --min-hostgroup=1024 "
+                  "--min-parallelism=200 --initial-rtt-timeout=200 "
+                  "--max-rtt-timeout=300 --max-retries=3 --host-timeout=3m -oX " + outfile.name)
     else:
-        os.system("nmap -iL host_for_general_scan.txt -6 -T5 -sV --min-parallelism=100 --max-parallelism=256 -oX " + outfile.name)
+        os.system("nmap -iL host_for_general_scan.txt -6 -T5 -sV --min-hostgroup=1024 "
+                  "--min-parallelism=200  --initial-rtt-timeout=200 "
+                  "--max-rtt-timeout=300 --max-retries=3 --host-timeout=3m -oX " + outfile.name)
 
     print('Service scan done ...')
     os.remove("host_for_general_scan.txt")
@@ -131,13 +145,13 @@ def shuffle_data(inputfile):
         """
     print('Shuffle IP addresses ...')
     fid = open(inputfile, "r")
-    li = fid.readlines()
+    ip_list = fid.readlines()
     fid.close()
 
-    random.shuffle(li)
+    random.shuffle(ip_list)
 
     fid = open(inputfile + '_shuffled', "w")
-    fid.writelines(li)
+    fid.writelines(ip_list)
     fid.close()
     return inputfile + '_shuffled'
 
@@ -149,7 +163,8 @@ def combine_ip_port(inputfile, hosts, ip_type):
     ip_type:    Type of IP address used.
 
     Function:
-    Will combine the live hosts with the input file to create a list where live hosts are combined
+    Will combine the live hosts with the input file
+    to create a list where live hosts are combined
     with the "live" service ports.
 
     Return value:
@@ -159,10 +174,10 @@ def combine_ip_port(inputfile, hosts, ip_type):
     hosts_and_ports = []
     with open(inputfile, "r") as file:
         if ip_type == 'ipv4':
-            fp = csv.reader(file, delimiter=':')
+            data = csv.reader(file, delimiter=':')
         else:
-            fp = csv.reader(file, delimiter='.')
-        for row in fp:
+            data = csv.reader(file, delimiter='.')
+        for row in data:
             for field in row:
                 if field in hosts:
                     hosts_and_ports.append(row)
@@ -176,7 +191,8 @@ def main(arguments):
     IPv4 files : ip:port        extension : .ipv4
     IPv6 files : ip.port        extension : .ipv6
     """
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('infile', help='Input file', action=check_ext({'ipv4', 'ipv6'}))
     parser.add_argument("outfile", help="Output file", type=argparse.FileType("w"))
     parser.add_argument("ip_type", choices=['ipv4', 'ipv6'])
